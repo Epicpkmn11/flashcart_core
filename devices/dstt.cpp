@@ -434,13 +434,13 @@ public:
         return true;
     }
 
-    bool injectNtrBoot(uint8_t *blowfish_key, uint8_t *firm, uint32_t firm_size) {
+    bool injectNtrBoot(uint8_t *blowfish_key, uint8_t *firm, uint32_t firm_size, bool twl) {
         // todo: we just read and write the entire flash chip because we don't align blocks
         // properly, when writeFlash works, don't use memcpy
         logMessage(LOG_INFO, "DSTT: Injecting Ntrboot");
 
         // don't bother installing if we can't fit
-        if (firm_size > m_max_length - 0x7E00) {
+        if (firm_size > m_max_length - (twl ? 0 : 0x7E00)) {
             logMessage(LOG_ERR, "DSTT: Firm too large!");
             return false; // todo: return error code
         }
@@ -448,9 +448,15 @@ public:
         uint8_t* buffer = (uint8_t*)malloc(m_max_length);
         readFlash(0, m_max_length, buffer);
 
-        memcpy(buffer + 0x1000, blowfish_key, 0x48);
-        memcpy(buffer + 0x2000, blowfish_key + 0x48, 0x1000);
-        memcpy(buffer + 0x7E00, firm, firm_size);
+        if (twl) {
+            memcpy(buffer, firm, firm_size);
+            memcpy(buffer + 0x1000, blowfish_key, 0x48);
+            memcpy(buffer + 0x2000, blowfish_key + 0x48, 0x1000);
+        } else {
+            memcpy(buffer + 0x1000, blowfish_key, 0x48);
+            memcpy(buffer + 0x2000, blowfish_key + 0x48, 0x1000);
+            memcpy(buffer + 0x7E00, firm, firm_size);
+        }
 
         writeFlash(0, m_max_length, buffer);
 

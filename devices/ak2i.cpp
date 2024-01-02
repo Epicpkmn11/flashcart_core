@@ -181,8 +181,10 @@ public:
         return true;
     }
 
-    bool injectNtrBoot(uint8_t *blowfish_key, uint8_t *firm, uint32_t firm_size)
+    bool injectNtrBoot(uint8_t *blowfish_key, uint8_t *firm, uint32_t firm_size, bool twl)
     {
+        if (twl) return false; // TODO
+
         // This function follows a read-modify-write cycle:
         //  - Read from flash to prevent accidental erasure of things not overwritten
         //  - Modify the data read, mostly by memcpying data in, perhaps 'encrypting' it first.

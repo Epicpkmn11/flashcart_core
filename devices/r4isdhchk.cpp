@@ -261,7 +261,9 @@ public:
         return true;
     }
 
-    bool injectNtrBoot(uint8_t *blowfish_key, uint8_t *firm, uint32_t firm_size) {
+    bool injectNtrBoot(uint8_t *blowfish_key, uint8_t *firm, uint32_t firm_size, bool twl) {
+        if (twl) return false; // TODO
+
         logMessage(LOG_INFO, "r4isdhc.hk: Injecting ntrboot");
         uint8_t *block_0 = (uint8_t *)malloc(0x10000);
         uint32_t buf_size = PAGE_ROUND_UP(firm_size - 0x200 + 0x000000, 0x10000);

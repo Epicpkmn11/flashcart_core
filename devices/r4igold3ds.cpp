@@ -231,8 +231,9 @@ public:
         return true;
     }
 
-    bool injectNtrBoot(uint8_t *blowfish_key, uint8_t *firm, uint32_t firm_size)
+    bool injectNtrBoot(uint8_t *blowfish_key, uint8_t *firm, uint32_t firm_size, bool twl)
     {
+        if (twl) return false; // TODO
 
         const r4i_flash_setting *set;
 

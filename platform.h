@@ -13,7 +13,7 @@ enum log_priority {
 };
 
 enum class BlowfishKey {
-    NTR, B9Retail, B9Dev
+    NTR, B9Retail, B9Dev, TWL
 };
 
 // override these in platform.cpp

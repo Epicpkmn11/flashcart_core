@@ -32,7 +32,7 @@ class Example : Flashcart {
 
         bool readFlash(uint32_t address, uint32_t length, uint8_t *buffer) { return true; }
         bool writeFlash(uint32_t address, uint32_t length, const uint8_t *buffer) { return true; }
-        bool injectNtrBoot(uint8_t *blowfish_key, uint8_t *firm, uint32_t firm_size) { return true; }
+        bool injectNtrBoot(uint8_t *blowfish_key, uint8_t *firm, uint32_t firm_size, bool twl) { return true; }
 };
 
 // adds your cart to the list

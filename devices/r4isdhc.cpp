@@ -252,7 +252,9 @@ public:
         return Util::write(this, address, length, buffer, true);
     }
 
-    bool injectNtrBoot(uint8_t *blowfish_key, uint8_t *firm, uint32_t firm_size) override {
+    bool injectNtrBoot(uint8_t *blowfish_key, uint8_t *firm, uint32_t firm_size, bool twl) override {
+        if (twl) return false; // TODO
+        
         // FIRM is written at 0x7E00; blowfish key at 0x1F1000
         // N.B. this doesn't necessarily mean that the cart's ROM => NOR mapping will
         // allow a FIRM of this size (i.e. old carts), it's just so we don't overwrite
