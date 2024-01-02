@@ -183,14 +183,12 @@ public:
 
     bool injectNtrBoot(uint8_t *blowfish_key, uint8_t *firm, uint32_t firm_size, bool twl)
     {
-        if (twl) return false; // TODO
-
         // This function follows a read-modify-write cycle:
         //  - Read from flash to prevent accidental erasure of things not overwritten
         //  - Modify the data read, mostly by memcpying data in, perhaps 'encrypting' it first.
         //  - Write the data back to flash, now that we have made our modifications.
-        const uint32_t blowfish_adr = 0x80000;
-        const uint32_t firm_offset = 0x9E00;
+        const uint32_t blowfish_adr = twl ? 0 : 0x80000;
+        const uint32_t firm_offset = twl ? 0x2000 : 0x9E00;
         const uint32_t chipid_offset = 0x1FC0;
 
         uint32_t buf_size = PAGE_ROUND_UP(firm_offset + firm_size, page_size);

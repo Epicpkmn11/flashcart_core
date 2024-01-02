@@ -528,8 +528,6 @@ public:
     }
 
     bool injectNtrBoot(uint8_t *blowfish_key, uint8_t *firm, uint32_t firm_size, bool twl) {
-        if (twl) return false; // TODO
-
         if (firm_size > 0x1F5200 /* 0x200000 - 0xAE00 */) {
             logMessage(LOG_NOTICE, "FIRM too big; maximum size is 2052608 bytes");
             return false;
@@ -584,7 +582,7 @@ public:
         }
 
         bool result = Util::write(this, 0, 0x9100, configPage, true, "Writing configuration")
-            && Util::write(this, 0xAE00, firm_size, firm, true, "Writing FIRM");
+            && Util::write(this, twl ? 0x3000 : 0xAE00, firm_size, firm, true, "Writing FIRM");
         std::free(configPage);
         return result;
     }

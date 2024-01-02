@@ -233,8 +233,6 @@ public:
 
     bool injectNtrBoot(uint8_t *blowfish_key, uint8_t *firm, uint32_t firm_size, bool twl)
     {
-        if (twl) return false; // TODO
-
         const r4i_flash_setting *set;
 
         switch (m_r4i_type) {
@@ -249,7 +247,7 @@ public:
 
         logMessage(LOG_INFO, "R4iGold: Injecting ntrboot");
         injectFlash(set->blowfish_chunk_adr, 0x10000, set->blowfish_offset, blowfish_key, 0x1048, set->encrypt_header);
-        injectFlash(set->firm_hdr_chunk_adr, 0x10000, set->firm_hdr_offset, firm, 0x200, set->encrypt_header);
+        injectFlash(set->firm_hdr_chunk_adr, 0x10000, set->firm_hdr_offset - (twl ? 0x7E00 : 0), firm, 0x200, set->encrypt_header);
 
         uint32_t buf_size = PAGE_ROUND_UP(firm_size - 0x200 + set->firm_offset, 0x10000);
         injectFlash(set->firm_chunk_adr, buf_size, set->firm_offset, firm + 0x200, firm_size, true);
