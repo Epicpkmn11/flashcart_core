@@ -253,36 +253,37 @@ public:
     }
 
     bool injectNtrBoot(uint8_t *blowfish_key, uint8_t *firm, uint32_t firm_size, bool twl) override {
-        // FIRM is written at 0x7E00; blowfish key at 0x1F1000
-        // N.B. this doesn't necessarily mean that the cart's ROM => NOR mapping will
-        // allow a FIRM of this size (i.e. old carts), it's just so we don't overwrite
-        // the blowfish key
-        if (firm_size > (0x1F1000 - 0x7E00)) {
-            showProgress(0, 1, "FIRM too big (max 2003456 bytes)");
-            return false;
-        }
-
-        uint8_t map[0x100] = {0};
-        // set the 2nd ROM map to some high value (0x7FFFFFFF in big-endian)
-        map[4] = 0x7F; map[5] = 0xFF; map[6] = 0xFF; map[7] = 0xFF;
-        
         if (twl) {
+            // Blowfish to 0x1000 and 0x2000 with mirrors 0x1F0000 higher
+            // The header of the GCD goes at 0x1F0000 and continues up to 64k
+            // total at 0x1F3000. The rest is at 0x4000.
+            if (firm_size > 0x1F0000) {
+                showProgress(0, 1, "GCD too big (max 2,031,616 bytes)");
+                return false;
+            }
+
             return
-                // 1:1 map the ROM <=> NOR (unless it's an "old" cart - those don't seem to have
-                // a mapping in the NOR)
-                Util::write(this, 0, firm_size, firm, true, "Writing GCD (1)") && // FIRM
-                // type2 carts read 0x8000-0x10000 from 0x1F8000-0x200000 instead of from 0x8000
-                Util::write(this, 0x1F0000, std::min<uint32_t>(firm_size, (cart_type == 1 ? 0x200 : 0x10000)), firm, true,
-                    "Writing GCD (2)") && // FIRM header
                 Util::write(this, 0x1000, 0x48, blowfish_key, true, "Writing Blowfish key (1)") && // blowfish P array
                 Util::write(this, 0x2000, 0x1000, blowfish_key+0x48, true, "Writing Blowfish key (2)") && // blowfish S boxes
-                (
-                    (cart_type == 1 && Util::write(this, 0x40, 0x100, map, true, "Writing ROM <=> NOR map")) ||
-                    (cart_type == 2 && true) // type 2 not need ROM-NOR map
-                ) &&
                 Util::write(this, 0x1F1000, 0x48, blowfish_key, true, "Writing Blowfish key (3)") && // blowfish P array
-                Util::write(this, 0x1F2000, 0x1000, blowfish_key+0x48, true, "Writing Blowfish key (4)"); // blowfish S boxes
+                Util::write(this, 0x1F2000, 0x1000, blowfish_key+0x48, true, "Writing Blowfish key (4)") && // blowfish S boxes
+                Util::write(this, 0x1F0000, 0x200, firm, true, "Writing GCD header") && // GCD header
+                Util::write(this, 0x4000, firm_size - 0x4000, firm + 0x4000, true, "Writing GCD (1)") && // GCD
+                Util::write(this, 0x1F3000, std::min<uint32_t>(firm_size - 0x3000, 0xD000), firm + 0x3000, true, "Writing GCD (2)"); // GCD
         } else {
+            // FIRM is written at 0x7E00; blowfish key at 0x1F1000
+            // N.B. this doesn't necessarily mean that the cart's ROM => NOR mapping will
+            // allow a FIRM of this size (i.e. old carts), it's just so we don't overwrite
+            // the blowfish key
+            if (firm_size > (0x1F1000 - 0x7E00)) {
+                showProgress(0, 1, "FIRM too big (max 2,003,456 bytes)");
+                return false;
+            }
+
+            uint8_t map[0x100] = {0};
+            // set the 2nd ROM map to some high value (0x7FFFFFFF in big-endian)
+            map[4] = 0x7F; map[5] = 0xFF; map[6] = 0xFF; map[7] = 0xFF;
+
             return
                 // 1:1 map the ROM <=> NOR (unless it's an "old" cart - those don't seem to have
                 // a mapping in the NOR)
