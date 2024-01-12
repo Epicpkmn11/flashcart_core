@@ -214,7 +214,8 @@ public:
                 case ncgc::NTRState::Raw:
                     if (!trySecureInit(BlowfishKey::NTR)
                         && !trySecureInit(BlowfishKey::B9Retail)
-                        && !trySecureInit(BlowfishKey::B9Dev)) {
+                        && !trySecureInit(BlowfishKey::B9Dev)
+                        && !trySecureInit(BlowfishKey::TWL)) {
                         logMessage(LOG_DEBUG, "r4isdhc: type 2 init from RAW fail");
                         return false;
                     }
