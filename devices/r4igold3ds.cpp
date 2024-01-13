@@ -17,6 +17,10 @@ struct r4i_flash_setting {
     uint32_t firm_chunk_adr;
     uint32_t firm_offset;
     bool encrypt_header;
+    uint32_t gcd_hdr_chunk_adr;
+    uint32_t gcd_hdr_offset;
+    uint32_t gcd_start_offset;
+    uint32_t gcd_main_offset;
 };
 
 class R4i_Gold_3DS : Flashcart {
@@ -54,7 +58,7 @@ private:
          if (enc & BIT(4)) dec |= BIT(0);
          if (enc & BIT(5)) dec |= BIT(7);
          if (enc & BIT(6)) dec |= BIT(3);
-         if (enc & BIT(6)) dec |= BIT(2);
+         if (enc & BIT(7)) dec |= BIT(2);
          return dec;
     }
 
@@ -247,10 +251,29 @@ public:
 
         logMessage(LOG_INFO, "R4iGold: Injecting ntrboot");
         injectFlash(set->blowfish_chunk_adr, 0x10000, set->blowfish_offset, blowfish_key, 0x1048, set->encrypt_header);
-        injectFlash(set->firm_hdr_chunk_adr, 0x10000, set->firm_hdr_offset - (twl ? 0x7E00 : 0), firm, 0x200, set->encrypt_header);
 
-        uint32_t buf_size = PAGE_ROUND_UP(firm_size - 0x200 + set->firm_offset, 0x10000);
-        injectFlash(set->firm_chunk_adr, buf_size, set->firm_offset, firm + 0x200, firm_size, true);
+        if (twl) {
+            // GCD header
+            injectFlash(set->gcd_hdr_chunk_adr, 0x10000, set->gcd_hdr_offset, firm, 0x200, set->encrypt_header);
+
+            // 0x3000 needs to go somewhere, 0x8000 and 0x9000 didn't work in HW D
+            // injectFlash(set->gcd_hdr_chunk_adr, 0x10000, 0x8000, firm + 0x3000, 0x1000, set->encrypt_header);
+            // injectFlash(set->gcd_hdr_chunk_adr, 0x10000, 0x9000, firm + 0x3000, 0x1000, set->encrypt_header);
+
+            // First 16k of ARM9
+            injectFlash(set->gcd_hdr_chunk_adr, 0x10000, set->gcd_start_offset, firm + 0x4000, std::min<uint32_t>(0x4000, firm_size - 0x4000), set->encrypt_header);
+
+            // The rest of the GCD
+            if(firm_size > 0x8000) {
+                uint32_t buf_size = PAGE_ROUND_UP(firm_size - 0x8000 + set->firm_offset, 0x10000);
+                injectFlash(set->firm_chunk_adr, buf_size, set->firm_offset, firm + 0x8000, buf_size, true);
+            }
+        } else {
+            injectFlash(set->firm_hdr_chunk_adr, 0x10000, set->firm_hdr_offset, firm, 0x200, set->encrypt_header);
+
+            uint32_t buf_size = PAGE_ROUND_UP(firm_size - 0x200 + set->firm_offset, 0x10000);
+            injectFlash(set->firm_chunk_adr, buf_size, set->firm_offset, firm + 0x200, firm_size, true);
+        }
         return true;
     }
 };
@@ -270,7 +293,10 @@ const r4i_flash_setting R4i_Gold_3DS::flashSettings[3] = {
         /* .firm_hdr_offset    = */ 0x00EE00,
         /* .firm_chunk_adr     = */ 0x080000,
         /* .firm_offset        = */ 0x000000,
-        /* .encrypt_header     = */ true
+        /* .encrypt_header     = */ true,
+        /* .gcd_hdr_chunk_adr  = */ 0x000000,
+        /* .gcd_hdr_offset     = */ 0x00F000,
+        /* .gcd_start_offset   = */ 0x00B000,
     },
     {
         /* .blowfish_chunk_adr = */ 0x000000,
@@ -283,6 +309,9 @@ const r4i_flash_setting R4i_Gold_3DS::flashSettings[3] = {
         /* .firm_chunk_adr     = */ 0x080000,
         /* .firm_offset        = */ 0x002200,
         /* .encrypt_header     = */ false,
+        /* .gcd_hdr_chunk_adr  = */ 0x000000, // TODO
+        /* .gcd_hdr_offset     = */ 0x00F000, // TODO
+        /* .gcd_start_offset   = */ 0x00B000, // TODO
     },
     {
         /* .blowfish_chunk_adr = */ 0x1F0000,
@@ -292,6 +321,9 @@ const r4i_flash_setting R4i_Gold_3DS::flashSettings[3] = {
         /* .firm_chunk_adr     = */ 0x080000,
         /* .firm_offset        = */ 0x000000,
         /* .encrypt_header     = */ true,
+        /* .gcd_hdr_chunk_adr  = */ 0x000000, // TODO
+        /* .gcd_hdr_offset     = */ 0x00F000, // TODO
+        /* .gcd_start_offset   = */ 0x00B000, // TODO
     },
 };
 
